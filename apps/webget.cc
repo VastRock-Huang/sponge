@@ -36,6 +36,7 @@ void get_URL(const string &host, const string &path) {
     while (!tcpSocket.eof()) {
         cout << tcpSocket.read();
     }
+    tcpSocket.close();  // close the TCP connection
 
     //    cerr << "Function called: get_URL(" << host << ", " << path << ").\n";
     //    cerr << "Warning: get_URL() has not been implemented yet.\n";
