@@ -2,6 +2,7 @@
 #define SPONGE_LIBSPONGE_BYTE_STREAM_HH
 
 #include <string>
+#include <deque>
 
 //! \brief An in-order byte stream.
 
@@ -18,7 +19,7 @@ class ByteStream {
     // different approaches.
     const size_t _cap;
 
-    std::string _buffer;
+    std::deque<char> _buffer;
     size_t _total_read = 0;
     size_t _total_written = 0;
     bool _end = false;
