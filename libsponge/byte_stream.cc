@@ -39,6 +39,10 @@ void ByteStream::pop_output(const size_t len) {
 //! \param[in] len bytes will be popped and returned
 //! \returns a string
 std::string ByteStream::read(const size_t len) {
+    if (_end && _buffer.empty()) {
+        _error = true;
+        return {};
+    }
     const size_t size = min(len, _buffer.size());
     string str = _buffer.substr(0, size);
     _buffer.erase(0, size);
