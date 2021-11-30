@@ -15,10 +15,6 @@ using namespace std;
 ByteStream::ByteStream(const size_t capacity) : _cap(capacity), _buffer() {}
 
 size_t ByteStream::write(const string &data) {
-    if (_end) {
-        _error = true;
-        return 0;
-    }
     const size_t size = min(data.size(), _cap - _buffer.size());
     _buffer.append(data.substr(0, size));
     _total_written += size;
@@ -39,10 +35,6 @@ void ByteStream::pop_output(const size_t len) {
 //! \param[in] len bytes will be popped and returned
 //! \returns a string
 std::string ByteStream::read(const size_t len) {
-    if (_end && _buffer.empty()) {
-        _error = true;
-        return {};
-    }
     const size_t size = min(len, _buffer.size());
     string str = _buffer.substr(0, size);
     _buffer.erase(0, size);
