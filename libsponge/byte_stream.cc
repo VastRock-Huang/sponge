@@ -8,7 +8,7 @@
 // You will need to add private members to the class declaration in `byte_stream.hh`
 
 template <typename... Targs>
-void DUMMY_CODE(Targs &&... /* unused */) {}
+void DUMMY_CODE(Targs &&.../* unused */) {}
 
 using namespace std;
 
@@ -20,7 +20,9 @@ size_t ByteStream::write(const string &data) {
         return 0;
     }
     const size_t size = min(data.size(), _cap - _buffer.size());
-    _buffer.insert(_buffer.end(), data.cbegin(), data.cbegin() + size);
+    for (size_t i = 0; i < size; ++i) {
+        _buffer.push_back(data[i]);
+    }
     _total_written += size;
     return size;
 }
@@ -33,7 +35,9 @@ string ByteStream::peek_output(const size_t len) const {
 //! \param[in] len bytes will be removed from the output side of the buffer
 void ByteStream::pop_output(const size_t len) {
     const size_t size = min(len, _buffer.size());
-    _buffer.erase(_buffer.begin(), _buffer.begin() + size);
+    for (size_t i = 0; i < size; ++i) {
+        _buffer.pop_front();
+    }
     _total_read += size;
 }
 
@@ -47,7 +51,9 @@ std::string ByteStream::read(const size_t len) {
     }
     const size_t size = min(len, _buffer.size());
     string str(_buffer.cbegin(), _buffer.cbegin() + size);
-    _buffer.erase(_buffer.begin(), _buffer.begin() + size);
+    for (size_t i = 0; i < size; ++i) {
+        _buffer.pop_front();
+    }
     _total_read += size;
     return str;
 }

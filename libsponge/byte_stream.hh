@@ -1,8 +1,8 @@
 #ifndef SPONGE_LIBSPONGE_BYTE_STREAM_HH
 #define SPONGE_LIBSPONGE_BYTE_STREAM_HH
 
-#include <deque>
 #include <string>
+#include <deque>
 
 //! \brief An in-order byte stream.
 
