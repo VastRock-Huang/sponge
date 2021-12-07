@@ -12,11 +12,11 @@
 class StreamReassembler {
   private:
     // Your code here -- add private members as necessary.
-    std::deque<char> _buffer;
-    std::deque<bool> _map;
-    size_t _unassembled_bytes = 0;
-    size_t _buffer_begin = 0;
-    bool _eof = false;
+    std::deque<char> _buffer;       //!< The buffer to store unassembled bytes
+    std::deque<bool> _map;          //!< The map to identify whether the byte is data
+    size_t _unassembled_bytes = 0;  //! Total number of unassembled bytes
+    size_t _buffer_begin = 0;       //!< Starting index of the `_buffer`.
+    bool _eof = false;              //!< Flag indicating that the end of bytes has been stored into `_buffer`
 
     ByteStream _output;  //!< The reassembled in-order byte stream
     size_t _capacity;    //!< The maximum number of bytes
