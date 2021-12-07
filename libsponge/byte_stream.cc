@@ -42,8 +42,9 @@ void ByteStream::pop_output(const size_t len) {
 //! \returns a string
 std::string ByteStream::read(const size_t len) {
     const size_t size = min(len, _buffer.size());
-    string str(_buffer.cbegin(), _buffer.cbegin() + size);
+    string str;
     for (size_t i = 0; i < size; ++i) {
+        str.push_back(_buffer.front());
         _buffer.pop_front();
     }
     _total_read += size;
