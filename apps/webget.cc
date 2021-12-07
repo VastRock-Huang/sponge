@@ -23,8 +23,12 @@ void get_URL(const string &host, const string &path) {
 
     // construct the HTTP header and send to the server
     string httpHeader;
-    httpHeader.append("GET ").append(path).append(" HTTP/1.1\r\n")
-        .append("Host: ").append(host).append("\r\n")
+    httpHeader.append("GET ")
+        .append(path)
+        .append(" HTTP/1.1\r\n")
+        .append("Host: ")
+        .append(host)
+        .append("\r\n")
         .append("Connection: close\r\n")
         .append("\r\n");
     if (tcpSocket.write(httpHeader) != httpHeader.size()) {
