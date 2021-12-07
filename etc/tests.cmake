@@ -1,7 +1,9 @@
-enable_testing ()
+enable_testing ()   # Enable testing for current directory and below.
 
 set (LOSS_RATE 0.1)
 
+# add_test(NAME <name> COMMAND <command> [<arg>...])
+# --Add a test called <name> to the project to be run by ctest.
 add_test(NAME t_wrapping_ints_cmp         COMMAND wrapping_integers_cmp)
 add_test(NAME t_wrapping_ints_unwrap      COMMAND wrapping_integers_unwrap)
 add_test(NAME t_wrapping_ints_wrap        COMMAND wrapping_integers_wrap)
@@ -213,6 +215,9 @@ add_test(NAME t_isnD_128K_8K_lL      COMMAND "${PROJECT_SOURCE_DIR}/txrx.sh" -is
 #add_test(NAME t_isoD_128K_8K_L   COMMAND "${PROJECT_SOURCE_DIR}/txrx.sh" -isDod 128K -w 8K -L ${LOSS_RATE})
 #add_test(NAME t_isoD_128K_8K_lL  COMMAND "${PROJECT_SOURCE_DIR}/txrx.sh" -isDod 128K -w 8K -l ${LOSS_RATE} -L ${LOSS_RATE})
 
+# ${CMAKE_CTEST_COMMAND}: Full path to ctest command installed with CMake.
+# `--output-on-failure`: Output anything outputted by the test program if the test should fail.
+# `-R <regex>`: Run tests matching regular expression(The string contains the regex).
 add_custom_target (check_webget COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure --timeout 10 -R 't_webget'
                               COMMENT "Testing webget...")
 add_custom_target (check_lab0 COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure --timeout 10 -R 't_webget|t_byte_stream|_dt'

@@ -1,7 +1,11 @@
 set (default_build_type "Release")
-if (NOT (CMAKE_BUILD_TYPE_SHADOW STREQUAL CMAKE_BUILD_TYPE))
+# set the `CMAKE_BUILD_TYPE_SHADOW`
+if (NOT (CMAKE_BUILD_TYPE_SHADOW STREQUAL CMAKE_BUILD_TYPE))    # STREQUAL is used to compare two strings
     if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
         message (STATUS "Setting build type to '${default_build_type}'")
+        # set(<variable> <value>... CACHE <type> <docstring> [FORCE])
+        # `CACHE`: set a cache entry
+        # `FORCE`: overwrite existing entries
         set (CMAKE_BUILD_TYPE "${default_build_type}" CACHE STRING "Choose the type of build." FORCE)
     else ()
         message (STATUS "Building in ${CMAKE_BUILD_TYPE} mode as requested.")
