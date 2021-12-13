@@ -38,6 +38,7 @@ uint64_t unwrap(WrappingInt32 n, WrappingInt32 isn, uint64_t checkpoint) {
         }
     }
     return result;
+
 //    // simplify implementation
 //    int32_t offset = static_cast<uint32_t>(checkpoint) - (n - isn);
 //    int64_t result = checkpoint - offset;
