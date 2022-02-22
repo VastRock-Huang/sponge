@@ -4,7 +4,6 @@
 #include "byte_stream.hh"
 
 #include <cstdint>
-#include <string>
 #include <deque>
 
 //! \brief A class that assembles a series of excerpts from a byte stream (possibly out of order,
@@ -14,7 +13,7 @@ class StreamReassembler {
     // Your code here -- add private members as necessary.
     std::deque<char> _buffer;       //!< The buffer to store unassembled bytes
     std::deque<bool> _map;          //!< The map to identify whether the byte is data
-    size_t _unassembled_bytes = 0;  //! Total number of unassembled bytes
+    size_t _unassembled_bytes = 0;  //!< Total number of unassembled bytes
     size_t _buffer_begin = 0;       //!< Starting index of the `_buffer`.
     bool _eof = false;              //!< Flag indicating that the end of bytes has been stored into `_buffer`
 
@@ -52,6 +51,11 @@ class StreamReassembler {
     //! \brief Is the internal state empty (other than the output stream)?
     //! \returns `true` if no substrings are waiting to be assembled
     bool empty() const;
+
+    uint64_t first_unassembled_index() const { return _buffer_begin; }
 };
+
+inline uint64_t to_stream_index(uint64_t absolute_seqno) { return absolute_seqno -1; }
+inline uint64_t to_absolute_seqno(uint64_t stream_index) { return stream_index + 1; }
 
 #endif  // SPONGE_LIBSPONGE_STREAM_REASSEMBLER_HH
