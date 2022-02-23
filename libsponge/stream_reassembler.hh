@@ -51,11 +51,5 @@ class StreamReassembler {
     //! \brief Is the internal state empty (other than the output stream)?
     //! \returns `true` if no substrings are waiting to be assembled
     bool empty() const;
-
-    uint64_t first_unassembled_index() const { return _buffer_begin; }
 };
-
-inline uint64_t to_stream_index(uint64_t absolute_seqno) { return absolute_seqno -1; }
-inline uint64_t to_absolute_seqno(uint64_t stream_index) { return stream_index + 1; }
-
 #endif  // SPONGE_LIBSPONGE_STREAM_REASSEMBLER_HH
