@@ -8,6 +8,30 @@
 
 #include <functional>
 #include <queue>
+#include <map>
+
+
+class Timer {
+    size_t _ticks{0};
+    bool _started{false};
+
+  public:
+    bool expired(const size_t ms_since_last_tick, const unsigned RTO) {
+        return _started && (_ticks += ms_since_last_tick) >= RTO;
+    }
+
+    bool started() const { return _started; }
+
+    void stop() {
+        _ticks = 0;
+        _started = false;
+    }
+
+    void start() {
+        _ticks = 0;
+        _started = true;
+    }
+};
 
 //! \brief The "sender" part of a TCP implementation.
 
@@ -32,6 +56,21 @@ class TCPSender {
     //! the (absolute) sequence number for the next byte to be sent
     uint64_t _next_seqno{0};
 
+    size_t _bytes_in_flight{0};
+
+    size_t _sending_space{1};
+
+    std::map<uint64_t, TCPSegment> _outstanding_segments;
+
+    size_t _window_size{1};
+
+    unsigned _retransmission_timeout;
+
+    Timer _timer;
+
+    unsigned _consecutive_retransmissions{0};
+
+    void push_segment(const TCPSegment& segment);
   public:
     //! Initialize a TCPSender
     TCPSender(const size_t capacity = TCPConfig::DEFAULT_CAPACITY,
