@@ -26,7 +26,6 @@ uint64_t TCPSender::bytes_in_flight() const { return _bytes_in_flight; }
 
 void TCPSender::fill_window() {
     while (_sending_space > 0) {
-        Buffer buffer(_stream.read(min(_sending_space, TCPConfig::MAX_PAYLOAD_SIZE)));
         TCPHeader header;
         if (stream_in().eof()) {
             header.fin = true;
@@ -35,20 +34,20 @@ void TCPSender::fill_window() {
             header.syn = true;
         }
         header.seqno = next_seqno();
+        Buffer buffer(_stream.read(min(_sending_space - header.syn - header.fin, TCPConfig::MAX_PAYLOAD_SIZE)));
         TCPSegment segment;
         segment.header() = header;
         segment.payload() = buffer;
-
-        segments_out().emplace(segment);
-
-        if (buffer.size() != 0) {
-            if (!_timer.started()) {
-                _timer.start();
-            }
-            _outstanding_segments.emplace(segment);
+        size_t len = segment.length_in_sequence_space();
+        if(len == 0) {
+            return;
         }
 
-        size_t len = segment.length_in_sequence_space();
+        segments_out().emplace(segment);
+        if (!_timer.started()) {
+            _timer.start();
+        }
+        _outstanding_segments.emplace(segment);
         _next_seqno += len;
         _bytes_in_flight += len;
         _sending_space -= len;
@@ -61,6 +60,12 @@ void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_si
     uint64_t absolute_ackno = unwrap(ackno, _isn, next_seqno_absolute());
     _window_size = window_size;
     _sending_space += absolute_ackno + (window_size != 0 ? window_size : 1) - next_seqno_absolute();
+
+    if (absolute_ackno == 1) {
+        --_bytes_in_flight;
+        return;
+    }
+
     bool has_new = false;
     while (!_outstanding_segments.empty()) {
         TCPSegment segment = _outstanding_segments.front();
