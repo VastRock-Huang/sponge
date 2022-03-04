@@ -17,13 +17,12 @@ class Timer {
 
   public:
     bool expired(const size_t ms_since_last_tick, const unsigned RTO) {
-        return _started && (_ticks += ms_since_last_tick) >= RTO;
+        return _started && ((_ticks += ms_since_last_tick) >= RTO);
     }
 
     bool started() const { return _started; }
 
     void stop() {
-        _ticks = 0;
         _started = false;
     }
 
@@ -60,17 +59,15 @@ class TCPSender {
 
     size_t _sending_space{1};
 
-    std::map<uint64_t, TCPSegment> _outstanding_segments;
+    std::queue<TCPSegment> _outstanding_segments{};
 
     size_t _window_size{1};
 
-    unsigned _retransmission_timeout;
+    unsigned _retransmission_timeout{0};
 
-    Timer _timer;
+    Timer _timer{};
 
     unsigned _consecutive_retransmissions{0};
-
-    void push_segment(const TCPSegment& segment);
   public:
     //! Initialize a TCPSender
     TCPSender(const size_t capacity = TCPConfig::DEFAULT_CAPACITY,

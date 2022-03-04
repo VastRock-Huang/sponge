@@ -10,7 +10,7 @@
 // automated checks run by `make check_lab3`.
 
 template <typename... Targs>
-void DUMMY_CODE(Targs &&... /* unused */) {}
+void DUMMY_CODE(Targs &&.../* unused */) {}
 
 using namespace std;
 
@@ -25,23 +25,29 @@ TCPSender::TCPSender(const size_t capacity, const uint16_t retx_timeout, const s
 uint64_t TCPSender::bytes_in_flight() const { return _bytes_in_flight; }
 
 void TCPSender::fill_window() {
-    while(_sending_space > 0) {
-        Buffer buffer(_stream.read(min(_sending_space ,TCPConfig::MAX_PAYLOAD_SIZE)));
+    while (_sending_space > 0) {
+        Buffer buffer(_stream.read(min(_sending_space, TCPConfig::MAX_PAYLOAD_SIZE)));
         TCPHeader header;
-        if(stream_in().eof()) {
+        if (stream_in().eof()) {
             header.fin = true;
-        } else if(buffer.size() == 0) {
-            break;
         }
-        if(next_seqno_absolute() == 0) {
+        if (next_seqno_absolute() == 0) {
             header.syn = true;
         }
         header.seqno = next_seqno();
         TCPSegment segment;
         segment.header() = header;
         segment.payload() = buffer;
-        push_segment(segment);
-        _outstanding_segments.emplace(next_seqno_absolute(), segment);
+
+        segments_out().emplace(segment);
+
+        if (buffer.size() != 0) {
+            if (!_timer.started()) {
+                _timer.start();
+            }
+            _outstanding_segments.emplace(segment);
+        }
+
         size_t len = segment.length_in_sequence_space();
         _next_seqno += len;
         _bytes_in_flight += len;
@@ -54,19 +60,21 @@ void TCPSender::fill_window() {
 void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_size) {
     uint64_t absolute_ackno = unwrap(ackno, _isn, next_seqno_absolute());
     _window_size = window_size;
-    _sending_space += absolute_ackno + (window_size !=0 ? window_size : 1) - next_seqno_absolute();
+    _sending_space += absolute_ackno + (window_size != 0 ? window_size : 1) - next_seqno_absolute();
     bool has_new = false;
-    for(auto it = _outstanding_segments.begin(); it != _outstanding_segments.end(); ++it) {
-        size_t len = it->second.length_in_sequence_space();
-        uint64_t seqno = it->first;
-        if(seqno + len > absolute_ackno) break;
+    while (!_outstanding_segments.empty()) {
+        TCPSegment segment = _outstanding_segments.front();
+        size_t len = segment.length_in_sequence_space();
+        uint64_t seqno = unwrap(segment.header().seqno, _isn, next_seqno_absolute());
+        if (seqno + len > absolute_ackno)
+            break;
+        _outstanding_segments.pop();
         _bytes_in_flight -= len;
-        _outstanding_segments.erase(it);
         has_new = true;
     }
-    if(has_new) {
+    if (has_new) {
         _retransmission_timeout = _initial_retransmission_timeout;
-        if(!_outstanding_segments.empty()) {
+        if (!_outstanding_segments.empty()) {
             _timer.start();
         } else {
             _timer.stop();
@@ -77,9 +85,11 @@ void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_si
 
 //! \param[in] ms_since_last_tick the number of milliseconds since the last call to this method
 void TCPSender::tick(const size_t ms_since_last_tick) {
-    if(!_timer.expired(ms_since_last_tick, _retransmission_timeout)) return;
-    segments_out().push(_outstanding_segments.begin()->second);
-    if(_window_size != 0) {
+    if (!_timer.expired(ms_since_last_tick, _retransmission_timeout)) {
+        return;
+    }
+    segments_out().push(_outstanding_segments.front());
+    if (_window_size != 0) {
         ++_consecutive_retransmissions;
         _retransmission_timeout <<= 1;
     }
@@ -91,24 +101,18 @@ unsigned int TCPSender::consecutive_retransmissions() const { return _consecutiv
 void TCPSender::send_empty_segment() {
     TCPHeader header;
     header.seqno = next_seqno();
-    if(next_seqno_absolute() == 0) {
+    if (next_seqno_absolute() == 0) {
         header.syn = true;
     }
-    if(stream_in().eof()) {
+    if (stream_in().eof()) {
         header.fin = true;
     }
     Buffer buffer;
     TCPSegment segment;
     segment.header() = header;
     segment.payload() = buffer;
-    push_segment(segment);
+
+    segments_out().emplace(segment);
     _bytes_in_flight += segment.length_in_sequence_space();
     _next_seqno += segment.length_in_sequence_space();
-}
-
-void TCPSender::push_segment(const TCPSegment &segment) {
-    segments_out().push(segment);
-    if(!_timer.started()) {
-        _timer.start();
-    }
 }
