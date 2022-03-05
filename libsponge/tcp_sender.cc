@@ -20,26 +20,33 @@ using namespace std;
 TCPSender::TCPSender(const size_t capacity, const uint16_t retx_timeout, const std::optional<WrappingInt32> fixed_isn)
     : _isn(fixed_isn.value_or(WrappingInt32{random_device()()}))
     , _initial_retransmission_timeout{retx_timeout}
-    , _stream(capacity) {}
+    , _stream(capacity)
+    , _retransmission_timeout{retx_timeout} {}
 
 uint64_t TCPSender::bytes_in_flight() const { return _bytes_in_flight; }
 
 void TCPSender::fill_window() {
-    while (_sending_space > 0) {
+    while (_sending_space > 0 && !_sending_ending) {
         TCPHeader header;
-        if (stream_in().eof()) {
-            header.fin = true;
-        }
         if (next_seqno_absolute() == 0) {
             header.syn = true;
+            --_sending_space;
         }
         header.seqno = next_seqno();
-        Buffer buffer(_stream.read(min(_sending_space - header.syn - header.fin, TCPConfig::MAX_PAYLOAD_SIZE)));
+        Buffer buffer(stream_in().read(min(_sending_space, TCPConfig::MAX_PAYLOAD_SIZE)));
+        // don't add FIN if this would make the segment exceed the receiver's window
+        _sending_space -= buffer.size();
+        if (stream_in().eof() && _sending_space > 0) {
+            header.fin = true;
+            --_sending_space;
+            _sending_ending = true;
+        }
         TCPSegment segment;
         segment.header() = header;
         segment.payload() = buffer;
+
         size_t len = segment.length_in_sequence_space();
-        if(len == 0) {
+        if (len == 0) {
             return;
         }
 
@@ -50,7 +57,6 @@ void TCPSender::fill_window() {
         _outstanding_segments.emplace(segment);
         _next_seqno += len;
         _bytes_in_flight += len;
-        _sending_space -= len;
     }
 }
 
@@ -58,13 +64,13 @@ void TCPSender::fill_window() {
 //! \param window_size The remote receiver's advertised window size
 void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_size) {
     uint64_t absolute_ackno = unwrap(ackno, _isn, next_seqno_absolute());
-    _window_size = window_size;
-    _sending_space += absolute_ackno + (window_size != 0 ? window_size : 1) - next_seqno_absolute();
-
-    if (absolute_ackno == 1) {
-        --_bytes_in_flight;
+    // impossible ackno (beyond next seqno) should be ignored
+    if (absolute_ackno > next_seqno_absolute()) {
         return;
     }
+
+    _window_size = window_size;
+    _sending_space += absolute_ackno + (window_size != 0 ? window_size : 1) - next_seqno_absolute();
 
     bool has_new = false;
     while (!_outstanding_segments.empty()) {

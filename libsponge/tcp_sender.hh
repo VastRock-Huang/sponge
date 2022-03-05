@@ -59,11 +59,13 @@ class TCPSender {
 
     size_t _sending_space{1};
 
+    bool _sending_ending{false};
+
     std::queue<TCPSegment> _outstanding_segments{};
 
     size_t _window_size{1};
 
-    unsigned _retransmission_timeout{0};
+    unsigned _retransmission_timeout;
 
     Timer _timer{};
 
