@@ -69,8 +69,8 @@ class TCPSender {
     //! the receiver's window size
     size_t _window_size{1};
 
-    //! the sequence space size that sender can send new bytes
-    size_t _sending_space{1};
+    //! the (absolute) acknowledge sequence number from receiver
+    uint64_t _ackno{0};
 
     //! flag indicating that FIN flag has been set and sender cannot send any new byte
     bool _sending_ending{false};

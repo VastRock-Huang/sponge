@@ -26,23 +26,29 @@ TCPSender::TCPSender(const size_t capacity, const uint16_t retx_timeout, const s
 uint64_t TCPSender::bytes_in_flight() const { return _bytes_in_flight; }
 
 void TCPSender::fill_window() {
+    // if `_sending_end` has been set, the sender shouldn't send any new bytes
+    if (_sending_ending) {
+        return;
+    }
+    // if the window size is 0, it should act like the window size is 1
+    size_t sending_space = _ackno + (_window_size != 0 ? _window_size : 1) - next_seqno_absolute();
     // have the sending space and not get to sending ending
-    while (_sending_space > 0 && !_sending_ending) {
+    while (sending_space > 0 && !_sending_ending) {
         TCPSegment segment;
         TCPHeader &header = segment.header();
         if (next_seqno_absolute() == 0) {
             header.syn = true;
-            --_sending_space;
+            --sending_space;
         }
         header.seqno = next_seqno();
         Buffer &buffer = segment.payload();
-        buffer = stream_in().read(min(_sending_space, TCPConfig::MAX_PAYLOAD_SIZE));
+        buffer = stream_in().read(min(sending_space, TCPConfig::MAX_PAYLOAD_SIZE));
         // don't add FIN if this would make the segment exceed the receiver's window
-        _sending_space -= buffer.size();
-        if (stream_in().eof() && _sending_space > 0) {
+        sending_space -= buffer.size();
+        if (stream_in().eof() && sending_space > 0) {
             header.fin = true;
-            --_sending_space;
-            // set `_sending_ending` true, so that sender will never send any new byte
+            --sending_space;
+            // set `_sending_ending` true, so that sender will never send any new bytes
             _sending_ending = true;
         }
 
@@ -65,14 +71,13 @@ void TCPSender::fill_window() {
 //! \param ackno The remote receiver's ackno (acknowledgment number)
 //! \param window_size The remote receiver's advertised window size
 void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_size) {
-    uint64_t absolute_ackno = unwrap(ackno, _isn, next_seqno_absolute());
+    _ackno = unwrap(ackno, _isn, next_seqno_absolute());
     // impossible ackno (beyond next seqno) should be ignored
-    if (absolute_ackno > next_seqno_absolute()) {
+    if (_ackno > next_seqno_absolute()) {
         return;
     }
     _window_size = window_size;
-    // if the window size is 0, it should act like the window size is 1
-    _sending_space += absolute_ackno + (window_size != 0 ? window_size : 1) - next_seqno_absolute();
+
     // the flag indicating that if new data has been acknowledged
     bool has_new = false;
     while (!_outstanding_segments.empty()) {
@@ -80,7 +85,7 @@ void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_si
         size_t len = segment.length_in_sequence_space();
         uint64_t seqno = unwrap(segment.header().seqno, _isn, next_seqno_absolute());
         // the segment is not fully acknowledged, should stop
-        if (seqno + len > absolute_ackno) {
+        if (seqno + len > _ackno) {
             break;
         }
         _outstanding_segments.pop();
