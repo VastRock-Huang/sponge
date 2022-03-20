@@ -9,6 +9,37 @@
 #include <functional>
 #include <queue>
 
+//! \brief The timer used for TCPSender
+class Timer {
+  private:
+    //! total elapsed time
+    size_t _ticks{0};
+
+    //! timer is started or not
+    bool _started{false};
+
+  public:
+    //! check if the timer has expired and update `_ticks`
+    //! \param[in] timeout the timeout time, i.e. RTO
+    //! \return true if timer has expired
+    bool expired(const size_t ms_since_last_tick, const unsigned timeout) {
+        // The timer will only expire if it is started
+        return _started && ((_ticks += ms_since_last_tick) >= timeout);
+    }
+
+    //! \return true if timer is started
+    bool started() const { return _started; }
+
+    //! stop the timer
+    void stop() { _started = false; }
+
+    //! start the timer
+    void start() {
+        _ticks = 0;
+        _started = true;
+    }
+};
+
 //! \brief The "sender" part of a TCP implementation.
 
 //! Accepts a ByteStream, divides it up into segments and sends the
@@ -24,13 +55,37 @@ class TCPSender {
     std::queue<TCPSegment> _segments_out{};
 
     //! retransmission timer for the connection
-    unsigned int _initial_retransmission_timeout;
+    const unsigned int _initial_retransmission_timeout;
 
     //! outgoing stream of bytes that have not yet been sent
     ByteStream _stream;
 
     //! the (absolute) sequence number for the next byte to be sent
     uint64_t _next_seqno{0};
+
+    //! the sequence numbers occupied by segments sent but not yet acknowledged
+    size_t _bytes_in_flight{0};
+
+    //! the receiver's window size
+    size_t _window_size{1};
+
+    //! the (absolute) acknowledge sequence number from receiver
+    uint64_t _ackno{0};
+
+    //! flag indicating that FIN flag has been set and sender cannot send any new byte
+    bool _sending_ending{false};
+
+    //! the queue storing the outstanding segments
+    std::queue<TCPSegment> _outstanding_segments{};
+
+    //! the timer for this TCPSender
+    Timer _timer{};
+
+    //! current retransmission timeout
+    unsigned _retransmission_timeout;
+
+    //! the number of consecutive retransmissions
+    unsigned _consecutive_retransmissions{0};
 
   public:
     //! Initialize a TCPSender
