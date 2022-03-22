@@ -23,11 +23,11 @@ class TCPConnection {
 
     bool _active{true};
 
-    bool _fully_ack{false};
-
     size_t _time_since_last_segment_received{0};
 
     void send_segments();
+
+    void send_RST();
 
     void unclean_shutdown();
 
