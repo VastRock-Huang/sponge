@@ -21,14 +21,19 @@ class TCPConnection {
     //! in case the remote TCPConnection doesn't know we've received its whole stream?
     bool _linger_after_streams_finish{true};
 
+    //! the active state of the TCPConnection, it will be set false when TCPConnection has a shutdown
     bool _active{true};
 
+    //! the time since last segment received
     size_t _time_since_last_segment_received{0};
 
+    //! send segments to outbound queue
     void send_segments();
 
+    //! send a segment with RST flag
     void send_RST();
 
+    //! TCPConnection unclean shutdown
     void unclean_shutdown();
 
   public:
