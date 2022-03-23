@@ -16,24 +16,20 @@ ByteStream::ByteStream(const size_t capacity) : _cap(capacity), _buffer() {}
 
 size_t ByteStream::write(const string &data) {
     const size_t size = min(data.size(), _cap - _buffer.size());
-    for (size_t i = 0; i < size; ++i) {
-        _buffer.push_back(data[i]);
-    }
+    _buffer.append(data, 0, size);
     _total_written += size;
     return size;
 }
 
 //! \param[in] len bytes will be copied from the output side of the buffer
 string ByteStream::peek_output(const size_t len) const {
-    return {_buffer.cbegin(), _buffer.cbegin() + min(len, _buffer.size())};
+    return {_buffer, 0,min(len, _buffer.size())};
 }
 
 //! \param[in] len bytes will be removed from the output side of the buffer
 void ByteStream::pop_output(const size_t len) {
     const size_t size = min(len, _buffer.size());
-    for (size_t i = 0; i < size; ++i) {
-        _buffer.pop_front();
-    }
+    _buffer.erase(0, size);
     _total_read += size;
 }
 
@@ -42,11 +38,8 @@ void ByteStream::pop_output(const size_t len) {
 //! \returns a string
 std::string ByteStream::read(const size_t len) {
     const size_t size = min(len, _buffer.size());
-    string str;
-    for (size_t i = 0; i < size; ++i) {
-        str.push_back(_buffer.front());
-        _buffer.pop_front();
-    }
+    string str = _buffer.substr(0, size);
+    _buffer.erase(0, size);
     _total_read += size;
     return str;
 }
