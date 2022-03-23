@@ -1,6 +1,8 @@
 #ifndef SPONGE_LIBSPONGE_BYTE_STREAM_HH
 #define SPONGE_LIBSPONGE_BYTE_STREAM_HH
 
+#include "buffer.hh"
+
 #include <string>
 
 //! \brief An in-order byte stream.
@@ -18,7 +20,8 @@ class ByteStream {
     // different approaches.
     const size_t _cap;  //! The capacity of the stream buffer
 
-    std::string _buffer;   //!< Byte stream buffer
+    BufferList _buffer{};       //!< Byte stream buffer
+    size_t _buffer_size = 0;    //! Total number of bytes in buffer
     size_t _total_read = 0;     //!< Total number of bytes written
     size_t _total_written = 0;  //!< Total number of bytes popped
     bool _end = false;          //!< Flag indicating that the byte stream has reached its ending.
