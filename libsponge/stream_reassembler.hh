@@ -1,24 +1,37 @@
 #ifndef SPONGE_LIBSPONGE_STREAM_REASSEMBLER_HH
 #define SPONGE_LIBSPONGE_STREAM_REASSEMBLER_HH
 
+#include "buffer_plus.hh"
 #include "byte_stream.hh"
 
 #include <cstdint>
-#include <deque>
+#include <set>
+#include <string>
 
 //! \brief A class that assembles a series of excerpts from a byte stream (possibly out of order,
 //! possibly overlapping) into an in-order byte stream.
 class StreamReassembler {
   private:
     // Your code here -- add private members as necessary.
-    std::deque<char> _buffer;       //!< The buffer to store unassembled bytes
-    std::deque<bool> _map;          //!< The map to identify whether the byte is data
-    size_t _unassembled_bytes = 0;  //!< Total number of unassembled bytes
-    size_t _buffer_begin = 0;       //!< Starting index of the `_buffer`.
-    bool _eof = false;              //!< Flag indicating that the end of bytes has been stored into `_buffer`
+    struct Block {
+        size_t index;     //!< The index of the data in BufferPlus
+        BufferPlus data;  //!< The buffer to store the string
 
-    ByteStream _output;  //!< The reassembled in-order byte stream
-    size_t _capacity;    //!< The maximum number of bytes
+        Block(size_t idx, std::string &&str) noexcept : index(idx), data(std::move(str)) {}
+
+        bool operator<(const Block &block) const { return index < block.index; }
+
+        //! \brief the size of string in block
+        size_t size() const { return data.size(); }
+    };
+
+    std::set<Block> _buffer{};     //!< The set to store unassembled strings
+    size_t _unassembled_bytes{0};  //!< Total number of unassembled bytes
+    bool _eof{false};              //!< Flag indicating that the end of bytes has been stored into `_buffer`
+    ByteStream _output;            //!< The reassembled in-order byte stream
+    size_t _capacity;              //!< The maximum number of bytes
+
+    void insert_block(size_t index, std::string &&data);
 
   public:
     //! \brief Construct a `StreamReassembler` that will store up to `capacity` bytes.
@@ -52,4 +65,5 @@ class StreamReassembler {
     //! \returns `true` if no substrings are waiting to be assembled
     bool empty() const;
 };
+
 #endif  // SPONGE_LIBSPONGE_STREAM_REASSEMBLER_HH
