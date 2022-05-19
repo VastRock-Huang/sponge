@@ -1,7 +1,20 @@
-For build prereqs, see [the CS144 VM setup instructions](https://web.stanford.edu/class/cs144/vm_howto).
+# Sponge
+Stanford CS144 Fall 2021 Labs (TCP part)
+## Codes and Blogs
+Only the labs for the **TCP part (Lab 0~4)** are done.  
+The code for each lab is under its corresponding branch. For example, the code for Lab1 is in branch `lab1-startcode`.  
+The master branch is the final code after completing the TCP part of labs, which is the same as the code of Lab4.    
+The specific details of the lab code can be found on my blogs, the URLs are as follows:
+* [Lab 0: networking warmup](https://blog.csdn.net/LostUnravel/article/details/124534172)
+* [Lab 1: stitching substrings into a byte](https://blog.csdn.net/LostUnravel/article/details/124784103)
+* [Lab 2: the TCP receiver](https://blog.csdn.net/LostUnravel/article/details/124810142)
+* [Lab 3: The TCP Sender](https://blog.csdn.net/LostUnravel/article/details/124839831)
+* [Lab 4: The TCP connection](https://blog.csdn.net/LostUnravel/article/details/124870729)
+
+Welcome to discuss and communicate.
 
 ## Sponge quickstart
-
+For build prereqs, see [the CS144 VM setup instructions](https://web.stanford.edu/class/cs144/vm_howto).  
 To set up your build directory:
 
 	$ mkdir -p <path/to/sponge>/build
